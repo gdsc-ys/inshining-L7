@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"math"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +28,7 @@ func main() {
             return
          }
 
-         log.Println("Server send : " + string(data[:n]))
+         fmt.Println("Server send : " + string(data[:n]))
          time.Sleep(time.Duration(3) * time.Second)
       }
    }()
@@ -38,9 +40,21 @@ func main() {
 
    for {
       var s string
-      fmt.Scanln(&s)
-      payload := strconv.Itoa(userId) + " " + s;
-      conn.Write([]byte(payload))
+      scanner := bufio.NewScanner(os.Stdin);
+      scanner.Scan();
+      s = scanner.Text();
+
+      // Header
+      contentLenght := len(s);
+      t := time.Now();
+      time_format := t.Format(time.RFC3339);
+      header := strconv.Itoa(userId) + "Content-Length:" + strconv.Itoa(contentLenght) + "," + "language:en,"  + "date-time:" + time_format + "\n\n";
+
+      payload :=  s;
+      packet := header + payload;
+      bin := StringToBin(packet);
+      bin = "01" + bin
+      conn.Write([]byte(bin))
       time.Sleep(time.Duration(3) * time.Second)
    }
 }
@@ -54,3 +68,11 @@ func RobinFingerprint(username string) int{
 	}
 	return int(math.Mod(sum, 64)) ;
  }
+
+func StringToBin(s string) string {
+   res := ""
+   for _, c := range s {
+       res = fmt.Sprintf("%s%.8b", res, c)
+   }
+   return res
+}
